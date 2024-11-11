@@ -16,6 +16,119 @@ interface Coin {
   };
 }
 
+type SortField = "rank" | "name" | "price" | "percent_change";
+
+export default function Home() {
+  const [coins, setCoins] = useState<Coin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>("rank");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  useEffect(() => {
+    const fetchCoins = async () => {
+      try {
+        const response = await fetch("/api");
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
+        }
+        const data = await response.json();
+        setCoins(data.data);
+      } catch (error) {
+        setError("Error fetching cryptocurrency data");
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoins();
+  }, []);
+
+  const sortedCoins = [...coins].sort((a, b) => {
+    let compareA, compareB;
+    switch (sortField) {
+      case "rank":
+        compareA = a.cmc_rank;
+        compareB = b.cmc_rank;
+        break;
+      case "name":
+        compareA = a.name.toLowerCase();
+        compareB = b.name.toLowerCase();
+        break;
+      case "price":
+        compareA = a.quote.USD.price;
+        compareB = b.quote.USD.price;
+        break;
+      case "percent_change":
+        compareA = a.quote.USD.percent_change_24h;
+        compareB = b.quote.USD.percent_change_24h;
+        break;
+    }
+
+    if (compareA < compareB) return sortOrder === "asc" ? -1 : 1;
+    if (compareA > compareB) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  if (loading)
+    return <div className="flex justify-center p-8 text-white">Loading...</div>;
+  if (error)
+    return <div className="flex justify-center p-8 text-red-500">{error}</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="w-full sm:w-11/12 lg:max-w-3xl mx-auto text-white rounded-lg shadow-lg p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-1 text-left">
+          Asset Tracker
+        </h1>
+        <p className="text-gray-500 text-sm mb-4">
+          Track your favourite crypto assets
+        </p>
+
+        <div className="grid grid-cols-4 gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
+          <button onClick={() => handleSort("rank")} className="text-left">
+            # {sortField === "rank" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+          </button>
+          <button onClick={() => handleSort("name")} className="text-left">
+            Name {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+          </button>
+          <button onClick={() => handleSort("price")} className="text-left">
+            Price{" "}
+            {sortField === "price" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+          </button>
+          <button
+            onClick={() => handleSort("percent_change")}
+            className="text-left"
+          >
+            24h %{" "}
+            {sortField === "percent_change"
+              ? sortOrder === "asc"
+                ? "▲"
+                : "▼"
+              : ""}
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {sortedCoins.slice(0, 25).map((coin) => (
+            <CoinRow key={coin.id} coin={coin} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const CoinRow = ({ coin }: { coin: Coin }) => {
   const [imageSrc, setImageSrc] = useState(
     `/coins/${coin.symbol.toLowerCase()}.png`
@@ -31,11 +144,11 @@ const CoinRow = ({ coin }: { coin: Coin }) => {
       <div className="flex items-center justify-center">
         <Image
           src={imageSrc}
-          alt={`${coin.name} logo`}
+          alt={`coin logo`}
           width={24}
           height={24}
           className="mr-2"
-          onError={() => setImageSrc("/coins/btc.png")}
+          onError={() => setImageSrc("/coins/default.png")}
         />
       </div>
 
@@ -68,61 +181,3 @@ const CoinRow = ({ coin }: { coin: Coin }) => {
     </div>
   );
 };
-
-export default function Home() {
-  const [coins, setCoins] = useState<Coin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCoins = async () => {
-      try {
-        const response = await fetch("/api");
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const data = await response.json();
-        setCoins(data.data);
-      } catch (error) {
-        setError("Error fetching cryptocurrency data");
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCoins();
-  }, []);
-
-  if (loading)
-    return <div className="flex justify-center p-8 text-white">Loading...</div>;
-  if (error)
-    return <div className="flex justify-center p-8 text-red-500">{error}</div>;
-
-  return (
-    <div className="min-h-screen bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="w-full sm:w-11/12 lg:max-w-3xl mx-auto text-white rounded-lg shadow-lg p-6">
-        <h1 className="text-xl sm:text-2xl font-bold mb-1 text-left">
-          Asset Tracker
-        </h1>
-        <p className="text-gray-500 text-sm mb-4">
-          Track your favourite crypto assets
-        </p>
-
-        <div className="grid grid-cols-[auto,auto,1fr,auto,auto] gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
-          <div>#</div>
-          <div></div>
-          <div>Name</div>
-          <div>Price</div>
-          <div>24h %</div>
-        </div>
-
-        <div className="space-y-2">
-          {coins.slice(0, 25).map((coin) => (
-            <CoinRow key={coin.id} coin={coin} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
