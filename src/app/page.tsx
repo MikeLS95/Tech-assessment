@@ -35,7 +35,7 @@ const CoinRow = ({ coin }: { coin: Coin }) => {
           width={24}
           height={24}
           className="mr-2"
-          onError={() => setImageSrc("/coins/default.png")} // Fallback to a default image if the icon fails to load
+          onError={() => setImageSrc("/coins/btc.png")}
         />
       </div>
 
@@ -109,15 +109,14 @@ export default function Home() {
           Track your favourite crypto assets
         </p>
 
-        {/* Header Row */}
-        <div className="grid grid-cols-4 gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
+        <div className="grid grid-cols-[auto,auto,1fr,auto,auto] gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
           <div>#</div>
+          <div></div>
           <div>Name</div>
           <div>Price</div>
           <div>24h %</div>
         </div>
 
-        {/* Coin Rows */}
         <div className="space-y-2">
           {coins.slice(0, 25).map((coin) => (
             <CoinRow key={coin.id} coin={coin} />
