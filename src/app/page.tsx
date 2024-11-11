@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface Coin {
   id: number;
@@ -14,6 +15,59 @@ interface Coin {
     };
   };
 }
+
+const CoinRow = ({ coin }: { coin: Coin }) => {
+  const [imageSrc, setImageSrc] = useState(
+    `/coins/${coin.symbol.toLowerCase()}.png`
+  );
+
+  return (
+    <div
+      key={coin.id}
+      className="grid grid-cols-[auto,auto,1fr,auto,auto] gap-2 sm:gap-4 p-3 sm:p-4 bg-zinc-900 rounded-lg text-white text-sm sm:text-base hover:bg-zinc-800 transition-colors"
+    >
+      <div className="text-zinc-400">{coin.cmc_rank}</div>
+
+      <div className="flex items-center justify-center">
+        <Image
+          src={imageSrc}
+          alt={`${coin.name} logo`}
+          width={24}
+          height={24}
+          className="mr-2"
+          onError={() => setImageSrc("/coins/default.png")} // Fallback to a default image if the icon fails to load
+        />
+      </div>
+
+      <div className="font-medium overflow-hidden">
+        <div className="truncate">
+          {coin.name}
+          <span className="text-zinc-400 ml-1 hidden sm:inline">
+            {coin.symbol}
+          </span>
+        </div>
+      </div>
+
+      <div className="truncate">
+        $
+        {coin.quote.USD.price.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+      </div>
+
+      <div
+        className={
+          coin.quote.USD.percent_change_24h >= 0
+            ? "text-green-400"
+            : "text-red-400"
+        }
+      >
+        {coin.quote.USD.percent_change_24h.toFixed(2)}%
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
   const [coins, setCoins] = useState<Coin[]>([]);
@@ -47,7 +101,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto text-white rounded-lg shadow-lg p-6">
+      <div className="w-full sm:w-11/12 lg:max-w-3xl mx-auto text-white rounded-lg shadow-lg p-6">
         <h1 className="text-xl sm:text-2xl font-bold mb-1 text-left">
           Asset Tracker
         </h1>
@@ -55,6 +109,7 @@ export default function Home() {
           Track your favourite crypto assets
         </p>
 
+        {/* Header Row */}
         <div className="grid grid-cols-4 gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
           <div>#</div>
           <div>Name</div>
@@ -62,44 +117,10 @@ export default function Home() {
           <div>24h %</div>
         </div>
 
+        {/* Coin Rows */}
         <div className="space-y-2">
-          {coins.map((coin) => (
-            <div
-              key={coin.id}
-              className="grid grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-4 bg-zinc-900 rounded-lg text-white text-sm sm:text-base hover:bg-zinc-800 transition-colors"
-            >
-              <div className="text-zinc-400">{coin.cmc_rank}</div>
-
-              <div className="font-medium overflow-hidden">
-                <div className="truncate">
-                  {coin.name}
-                  <span className="text-zinc-400 ml-1 hidden sm:inline">
-                    {coin.symbol}
-                  </span>
-                </div>
-                <div className="text-zinc-400 text-xs sm:hidden">
-                  {coin.symbol}
-                </div>
-              </div>
-
-              <div className="truncate">
-                $
-                {coin.quote.USD.price.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-
-              <div
-                className={
-                  coin.quote.USD.percent_change_24h >= 0
-                    ? "text-green-400"
-                    : "text-red-400"
-                }
-              >
-                {coin.quote.USD.percent_change_24h.toFixed(2)}%
-              </div>
-            </div>
+          {coins.slice(0, 25).map((coin) => (
+            <CoinRow key={coin.id} coin={coin} />
           ))}
         </div>
       </div>
