@@ -24,6 +24,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>("rank");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchCoins = async () => {
@@ -45,7 +46,22 @@ export default function Home() {
     fetchCoins();
   }, []);
 
-  const sortedCoins = [...coins].sort((a, b) => {
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  const filteredCoins = searchQuery
+    ? coins.filter((coin) =>
+        coin.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : coins;
+
+  const sortedCoins = [...filteredCoins].sort((a, b) => {
     let compareA, compareB;
     switch (sortField) {
       case "rank":
@@ -71,15 +87,6 @@ export default function Home() {
     return 0;
   });
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
   if (loading)
     return <div className="flex justify-center p-8 text-white">Loading...</div>;
   if (error)
@@ -95,30 +102,44 @@ export default function Home() {
           Track your favourite crypto assets
         </p>
 
-        <div className="grid grid-cols-4 gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
-          <button onClick={() => handleSort("rank")} className="text-left">
-            # {sortField === "rank" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
-          </button>
-          <button onClick={() => handleSort("name")} className="text-left">
-            Name {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
-          </button>
-          <button onClick={() => handleSort("price")} className="text-left">
-            Price{" "}
-            {sortField === "price" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
-          </button>
-          <button
-            onClick={() => handleSort("percent_change")}
-            className="text-left"
-          >
-            24h %{" "}
-            {sortField === "percent_change"
-              ? sortOrder === "asc"
-                ? "▲"
-                : "▼"
-              : ""}
-          </button>
+        <div className="mb-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for a cryptocurrency..."
+            className="w-full p-2 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
 
+        {!searchQuery && (
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 font-semibold mb-4 px-2 sm:px-4 text-sm sm:text-base">
+            <button onClick={() => handleSort("rank")} className="text-left">
+              # {sortField === "rank" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+            </button>
+            <button onClick={() => handleSort("name")} className="text-left">
+              Name{" "}
+              {sortField === "name" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+            </button>
+            <button onClick={() => handleSort("price")} className="text-left">
+              Price{" "}
+              {sortField === "price" ? (sortOrder === "asc" ? "▲" : "▼") : ""}
+            </button>
+            <button
+              onClick={() => handleSort("percent_change")}
+              className="text-left"
+            >
+              24h %{" "}
+              {sortField === "percent_change"
+                ? sortOrder === "asc"
+                  ? "▲"
+                  : "▼"
+                : ""}
+            </button>
+          </div>
+        )}
+
+        {/* Coin Rows */}
         <div className="space-y-2">
           {sortedCoins.slice(0, 25).map((coin) => (
             <CoinRow key={coin.id} coin={coin} />
@@ -144,11 +165,11 @@ const CoinRow = ({ coin }: { coin: Coin }) => {
       <div className="flex items-center justify-center">
         <Image
           src={imageSrc}
-          alt={`coin logo`}
+          alt={`${coin.name} logo`}
           width={24}
           height={24}
           className="mr-2"
-          onError={() => setImageSrc("/coins/default.png")}
+          onError={() => setImageSrc("/coins/default.png")} // Fallback to a default image if the icon fails to load
         />
       </div>
 
